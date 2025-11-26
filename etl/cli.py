@@ -4,7 +4,7 @@ WEATHER ETL - A small CLI tool to ingest, transform and store weather data for a
 
 import typer
 import json
-from rich import print
+from rich import print as rich_print
 from rich.pretty import Pretty
 from datetime import datetime
 from .logger import get_logger
@@ -41,7 +41,7 @@ def fetch(long: float = typer.Option(None, help="Longitude of location to fetch"
         return current_source
 
     if pretty:
-        print(
+        rich_print(
             Pretty(
                 [model.model_dump() for model in data], 
                 indent_guides=True

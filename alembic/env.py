@@ -21,7 +21,6 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadataç
 from etl.db import Base
-from etl import config as appConfig
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -34,7 +33,7 @@ def get_db_url():
         username=os.environ["DB_USER"],
         password=os.environ["DB_PASSWORD"],
         host=os.environ.get("DB_HOST", "localhost"),
-        port=os.environ.get("DB_PORT", "5432"),
+        port=int(os.environ.get("DB_PORT", "5432")),
         database=os.environ["DB_NAME"],
     )
 

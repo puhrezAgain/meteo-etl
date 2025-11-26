@@ -8,7 +8,7 @@ def get_logger(name: str = __name__) -> logging.Logger:
 
     logger.setLevel(logging.INFO)
     
-    handler = logging.StreamHandler(sys.stdout)
+    handler = logging.StreamHandler(sys.stderr)
     handler.setLevel(logging.INFO)
 
     formatter = logging.Formatter(
