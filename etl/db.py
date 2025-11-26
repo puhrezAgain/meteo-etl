@@ -1,11 +1,13 @@
 """
 etl.db contains our database table definitions 
 """
-from sqlalchemy import ForeignKey, Index, Integer, Float, Text, func, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID
-from sqlalchemy.orm import declarative_base, relationship, mapped_column, Mapped
-from datetime import datetime
+import os
 import uuid
+from datetime import datetime
+from sqlalchemy import ForeignKey, Index, Integer, Float, Text, func, UniqueConstraint, create_engine
+from sqlalchemy.orm import declarative_base, relationship, mapped_column, Mapped, sessionmaker
+from sqlalchemy.engine.url import URL
+from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID
 
 Base = declarative_base()
 
@@ -37,9 +39,30 @@ class Observation(Base):
     wind_speed: Mapped[float | None] = mapped_column(Float)
     fetch_id: Mapped[uuid.UUID | None] = mapped_column(UUID, ForeignKey("fetch_metadata.id", ondelete="CASCADE"))
 
-    fetch = relationship("FetchMetadata", back_populates="observation")
+    fetch = relationship("FetchMetadata", back_populates="observations")
 
     __table_args__ = (
         UniqueConstraint("latitude", "longitude", "timestamp", name="u_loc_time"),
         Index("ix_obs:loc:ts", "latitude", "longitude", "timestamp"),
     )
+
+def get_db_url():
+    return os.environ.get("DATABASE_URL") or URL.create(
+        drivername="postgresql+psycopg2",
+        username=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        host=os.environ.get("DB_HOST", "localhost"),
+        port=int(os.environ.get("DB_PORT", "5432")),
+        database=os.environ["DB_NAME"],
+    ).render_as_string(hide_password=False)
+
+engine = create_engine(
+    get_db_url(),
+    future=True,
+    echo=os.environ.get("DEBUG", False)
+)
+
+SessionLocal = sessionmaker(
+    bind=engine, expire_on_commit=False,
+    future=True
+)

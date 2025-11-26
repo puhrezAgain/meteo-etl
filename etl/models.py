@@ -3,7 +3,8 @@
 etl.models centralizes the pydantic models to be used throughout the application
 
 """
-from pydantic import BaseModel
+import uuid
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Sequence, List
 
@@ -15,12 +16,12 @@ class MeteoParams(BaseParamModel):
     latitude: float
 
 class PartialFetchRecord(BaseModel):
-    request_timestamp: datetime
+    request_timestamp: datetime = Field(default_factory=datetime.utcnow)
     request_url: str
     request_params: dict
-
+    status: str = "pending"
 class FetchRecord(PartialFetchRecord):
-    response_body: dict
+    response_data: dict
     response_status: int
     
 class WeatherRecord(BaseModel):
@@ -34,6 +35,7 @@ class WeatherRecord(BaseModel):
     wind_speed:  float
     wind_direction:  float
     cloud_cover: float
+    fetch_id: uuid.UUID | None = None
  
 
     
