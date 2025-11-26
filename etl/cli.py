@@ -10,7 +10,8 @@ from datetime import datetime
 from .logger import get_logger
 from .constants import SourceName
 from .sources import create_source
-from .load import load_rows
+from .load import insert_new_fetch_metadata
+from .db import SessionLocal
 
 logger = get_logger()
 app = typer.Typer()
@@ -65,8 +66,14 @@ def fetch_and_store(
         lat (float, optional): _description_. Defaults to typer.Option(None, help="Latitude of location to fetch").
         source (SourceName, optional): _description_. Defaults to typer.Option(SourceName.METEO, help="Source to be used in fetching", case_sensitive=False).
     """
-    logger.info("Starting fetch and store")
+    logger.info("Starting persisted fetch")
     # insert pending fetch row
+    current_source = create_source(source, dict(longitude=long, latitude=lat))
+    logger.info("Starting fetch for params %s, %s using %s", long, lat, current_source.URL)
+    with SessionLocal.begin() as session:
+        pending_fetch_model = insert_new_fetch_metadata(current_source.URL, current_source.params, session)
+        
+    data = current_source.extract_and_transform()
     fetched_source = fetch(long, lat, should_print=False, source=source)
     # update fetch with success or failure    
     # load successfully fetched data if fetch success
