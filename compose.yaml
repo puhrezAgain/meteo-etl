@@ -1,0 +1,12 @@
+services:
+  postgres:
+    image: "postgres:alpine"
+    environment:
+      DB_PASSWORD: changeme
+      DB_USER: etl
+      DB_NAME: weather
+    ports:  
+      - 5432:5432
+
+
+  

@@ -1,0 +1,35 @@
+[project]
+name = "api-etl"
+version = "0.1.0"
+description = "Sample project demostrating basic ETL from an API, accompanied by analysis notebooks"
+authors = [
+    {name = "¨Michael",email = "¨¨mpuhrez@gmail.com¨"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "requests (>=2.32.5,<3.0.0)",
+    "pandas (>=2.3.3,<3.0.0)",
+    "sqlalchemy (>=2.0.44,<3.0.0)",
+    "python-dotenv (>=1.2.1,<2.0.0)",
+    "shell (>=1.0.1,<2.0.0)",
+    "pydantic (>=2.12.4,<3.0.0)",
+    "typer (>=0.20.0,<0.21.0)",
+    "rich (>=14.2.0,<15.0.0)",
+    "alembic (>=1.17.2,<2.0.0)",
+    "psycopg2 (>=2.9.11,<3.0.0)"
+]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.1,<10.0.0)",
+    "black (>=25.11.0,<26.0.0)",
+    "isort (>=7.0.0,<8.0.0)"
+]
+
+[tool.poetry.scripts]
+etl = "etl.cli:main()"
