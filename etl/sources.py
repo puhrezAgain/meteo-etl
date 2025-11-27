@@ -8,11 +8,11 @@ in addition to standard url differences and payload differences
 """
 
 from abc import ABC, abstractmethod
-from typing import Type, ClassVar, Mapping
+from typing import Type, ClassVar, Mapping, Sequence
 from types import MappingProxyType
 from .constants import SourceName, APP_NAME
 from .models import (
-    BasePayload, BaseParamModel, MeteoPayload, MeteoParams
+    BasePayload, BaseParamModel, MeteoPayload, MeteoParams, WeatherRecord
 )
 from .extract import run_extractor
 
@@ -37,21 +37,21 @@ class BaseSource(ABC):
         self._params = self.REQUEST_PARAM_MODEL.model_validate(params)
 
     @property
-    def params(self):
+    def params(self) -> dict:
         return {
             **self.STATIC_PARAMS,
             **self._params.model_dump()
         }
 
-    def run_extractor(self):
+    def run_extractor(self) -> dict:
         self.raw_data = run_extractor(self.URL, self.params, user_agent=APP_NAME) 
         return self.raw_data
     
-    def run_transform(self):
+    def run_transform(self) -> Sequence[WeatherRecord]:
         self.data = self.PAYLOAD_MODEL.model_validate(self.raw_data)
         return self.data.to_records()
     
-    def extract_and_transform(self):
+    def extract_and_transform(self) -> Sequence[WeatherRecord]:
         self.run_extractor()
         return self.run_transform()
     

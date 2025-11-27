@@ -1,12 +1,13 @@
 import pytest
 import os
+import json
 from sqlalchemy import create_engine, event
 from sqlalchemy_utils import database_exists, create_database, drop_database
 from alembic.config import Config
 from alembic import command
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
-from etl import constants
+from etl import constants, models
 
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL") or URL.create(
         drivername="postgresql+psycopg2",
@@ -59,3 +60,12 @@ def override_engine(monkeypatch, engine, db_session):
     from etl import db
     monkeypatch.setattr(db, "engine", engine)
     monkeypatch.setattr(db, "SessionLocal", lambda: db_session)
+
+@pytest.fixture()
+def weather_records():
+    with open("tests/fixtures/meteo-data.json") as f:
+        records = json.load(f)
+
+    return [
+        models.WeatherRecord.model_validate_json(record) for record in records
+    ]

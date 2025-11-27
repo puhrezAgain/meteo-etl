@@ -4,6 +4,7 @@ etl.extract encapuslates logic dealing with HTTP interactions
 
 import requests, json
 from requests.adapters import HTTPAdapter
+from requests.models import Response
 from requests.exceptions import Timeout, HTTPError, RequestException, ConnectionError
 from urllib3.util.retry import Retry    
 from .logger import get_logger
@@ -25,8 +26,7 @@ def _fetch_data(session: requests.Session,
         response = session.get(url, params=params)
         response.raise_for_status()
     except HTTPError as httpError:
-        response = getattr(httpError, "response", None)
-        status = response.status_code if response is not None else None
+        status = httpError.response.status_code
         
         if status == 429:
             logger.error("Rate limited (429) fetching %s", url)
@@ -47,8 +47,6 @@ def _fetch_data(session: requests.Session,
         logger.exception("Network/request errror fetching %s: %s", url, requestException)
         raise
 
-
-    
     try:
         return response.json()
     except json.JSONDecodeError as e:

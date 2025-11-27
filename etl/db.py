@@ -3,6 +3,7 @@ etl.db contains our database table definitions
 """
 import os
 import uuid
+from . import constants
 from datetime import datetime
 from sqlalchemy import ForeignKey, Index, Integer, Float, Text, func, UniqueConstraint, create_engine
 from sqlalchemy.orm import declarative_base, relationship, mapped_column, Mapped, sessionmaker
@@ -30,6 +31,8 @@ class Observation(Base):
     __tablename__ = "weather_observations"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP, nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP, nullable=False, default=func.now(), onupdate=func.now())
     latitude: Mapped[float] = mapped_column(Float, nullable=False)
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
     timestamp: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
@@ -46,7 +49,7 @@ class Observation(Base):
         Index("ix_obs:loc:ts", "latitude", "longitude", "timestamp"),
     )
 
-def get_db_url():
+def get_db_url() -> str:
     return os.environ.get("DATABASE_URL") or URL.create(
         drivername="postgresql+psycopg2",
         username=os.environ["DB_USER"],
