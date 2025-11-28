@@ -5,23 +5,25 @@ WEATHER ETL - A small CLI tool to ingest, transform and store weather data for a
 import typer
 import json
 import requests
+from datetime import datetime
 from rich import print as rich_print
 from rich.pretty import Pretty
-from datetime import datetime
 from .logger import get_logger
 from .constants import SourceName
 from .sources import create_source
-from .load import insert_new_fetch_metadata, load_observation_rows, update_fetch_metadata
+from .load import insert_fetch_metadata, load_observation_rows, update_fetch_finished, LoadError
 from .db import SessionLocal
 
 logger = get_logger()
 app = typer.Typer()
 
+class FetchError(Exception):
+    pass
+
 @app.command()
 def fetch(long: float = typer.Option(None, help="Longitude of location to fetch"),
           lat: float = typer.Option(None, help="Latitude of location to fetch"),
           pretty: bool = typer.Option(True, "--pretty/--no-pretty", help="Pretty-print output"),
-          should_print: bool = typer.Option(True, "--print/--no-print", help="Print output"),
           source: SourceName = typer.Option(SourceName.METEO, help="Strategy to be used in fetching", case_sensitive=False)):
     """fetch using a longitude and latitude to fetch weather information for a particular location
 
@@ -30,7 +32,6 @@ def fetch(long: float = typer.Option(None, help="Longitude of location to fetch"
         long (float, optional): _description_. Defaults to typer.Option(None, help="Longitude of location to fetch").
         lat (float, optional): _description_. Defaults to typer.Option(None, help="Latitude of location to fetch").
         pretty (bool, optional): _description_. Defaults to typer.Option(True, "--pretty/--no-pretty", help="Pretty-print output").
-        should_print (bool, optional): _description_. Defaults to typer.Option(True, "--print/--no-print", help="Print output").
         source (SourceName, optional): _description_. Defaults to typer.Option(SourceName.METEO, help="Source to be used in fetching", case_sensitive=False).
     """
     current_source = create_source(source, dict(longitude=long, latitude=lat))
@@ -39,16 +40,11 @@ def fetch(long: float = typer.Option(None, help="Longitude of location to fetch"
     data = current_source.extract_and_transform()
 
     logger.info("Fetch successful")
-    if not should_print:
-        return current_source
 
     if pretty:
         rich_print(
-            Pretty(
-                [model.model_dump() for model in data], 
-                indent_guides=True
-                )
-            )
+            Pretty([model.model_dump() for model in data], indent_guides=True)
+        )
     else:
         print(json.dumps([model.model_dump_json() for model in data]))
 
@@ -70,32 +66,49 @@ def fetch_and_store(
     logger.info("Starting persisted fetch")
     # insert pending fetch row
     current_source = create_source(source, dict(longitude=long, latitude=lat))
+
     logger.info("Logging fetch for params %s, %s using %s", long, lat, current_source.URL)
     with SessionLocal.begin() as session:
-        pending_fetch_model = insert_new_fetch_metadata(current_source.URL, current_source.params, session)
-
-    data = current_source.extract_and_transform()
-    try:
-        fetched_source = fetch(long, lat, should_print=False, source=source)
-        update_fetch_metadata(pending_fetch_model, session, 200, fetched_source.raw_data)
-    except requests.exceptions.HTTPError as httpError:
-        logger.warning("Fetch faced http error, updating metadata and aborting")
-        update_fetch_metadata(pending_fetch_model, session, 
-                              httpError.response.status_code, dict(error=httpError.response.text))
-        raise 
-    except json.JSONDecodeError as jsonError:
-        logger.warning("Fetch faced json error, updating metadata and aborting")
-        update_fetch_metadata(pending_fetch_model, session, 200, dict(error="Invalid JSON"))
+        fetch_id = insert_fetch_metadata(current_source.URL, current_source.params, session)
     
-    logger.info("Fetch successful, initiating ingest")
+    try:
+        data = current_source.extract_and_transform()
+
+        with SessionLocal.begin() as session:
+            logger.info("Fetch successful, initiating ingest")
+            load_observation_rows(data, fetch_id, session)
+            logger.info("Ingest successful, updating metadata")
+    except LoadError as load_error:
+        logger.exception("Fetch faced load, updating metadata and aborting")
+        status_code = 200
+        metadata_body = dict(error="Load error")
+        error_occurred = load_error
+    except requests.exceptions.HTTPError as http_error:
+        logger.exception("Fetch faced http error, updating metadata and aborting")
+        status_code = getattr(http_error.response, "status_code")
+        metadata_body = dict(error=getattr(http_error.response, "text", str(http_error)))
+        error_occurred = http_error
+    except json.JSONDecodeError as jsonError:
+        logger.exception("Fetch faced json error, updating metadata and aborting")
+        status_code = 200
+        metadata_body = dict(error="Invalid JSON")
+        error_occurred = jsonError
+    except Exception as exc:
+        logger.exception("Unexpected error during fetch extraction, updated metadata and aborting")
+        status_code = 500
+        metadata_body = dict(error= str(exc), source="internal")
+        error_occurred = exc
+    else:
+        metadata_body = current_source.raw_data
+        status_code = 200
+        error_occurred = None
 
     with SessionLocal.begin() as session:
-        load_observation_rows(data, session)
+        finished_fetch = update_fetch_finished(fetch_id, status_code, metadata_body, session)
 
-    logger.info("Ingest successful, updating metadata")
+    if error_occurred:
+        raise error_occurred
 
-    # update fetch with success or failure    
-    # load successfully fetched data if fetch success
     logger.info("Fetch and store complete")
 
 def main():

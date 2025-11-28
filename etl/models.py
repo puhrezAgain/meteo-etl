@@ -35,7 +35,6 @@ class WeatherRecord(BaseModel):
     wind_speed:  float
     wind_direction:  float
     cloud_cover: float
-    fetch_id: uuid.UUID | None = None
  
 
     
