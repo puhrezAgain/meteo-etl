@@ -7,7 +7,7 @@ from alembic.config import Config
 from alembic import command
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
-from etl import constants, models
+from etl import models, config
 
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL") or URL.create(
         drivername="postgresql+psycopg2",

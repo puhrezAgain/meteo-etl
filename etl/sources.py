@@ -9,22 +9,20 @@ in addition to standard url differences and payload differences
 
 from abc import ABC, abstractmethod
 from typing import Type, ClassVar, Mapping, Sequence
+from enum import Enum
 from types import MappingProxyType
-from .constants import SourceName, APP_NAME
+from .config import APP_NAME
 from .models import (
     BasePayload, BaseParamModel, MeteoPayload, MeteoParams, WeatherRecord
 )
 from .extract import run_extractor
 
-SOURCE_REGISTRY: dict[str, type] = {}
-
-def registre_source(name: str):
-    def _decorator(cls):
-        SOURCE_REGISTRY[name] = cls
-        return cls
-    return _decorator
+# to have a source be available
+class SourceName(str, Enum):
+    METEO = "etl.meteo"
 
 class BaseSource(ABC):
+    NAME: SourceName
     URL: ClassVar[str] 
     PAYLOAD_MODEL: ClassVar[Type[BasePayload]] 
     REQUEST_PARAM_MODEL: ClassVar[Type[BaseParamModel]] 
@@ -44,7 +42,7 @@ class BaseSource(ABC):
         }
 
     def run_extractor(self) -> dict:
-        self.raw_data = run_extractor(self.URL, self.params, user_agent=APP_NAME) 
+        self.raw_data = run_extractor(self.URL, self.params, user_agent=f"{APP_NAME}_{self.NAME}") 
         return self.raw_data
     
     def run_transform(self) -> Sequence[WeatherRecord]:
@@ -54,9 +52,20 @@ class BaseSource(ABC):
     def extract_and_transform(self) -> Sequence[WeatherRecord]:
         self.run_extractor()
         return self.run_transform()
-    
+
+
+
+SOURCE_REGISTRY: dict[SourceName, Type[BaseSource]] = {}
+
+def registre_source(name: SourceName):
+    def _decorator(cls: Type[BaseSource]):
+        SOURCE_REGISTRY[name] = cls
+        return cls
+    return _decorator
+
 @registre_source(SourceName.METEO)   
 class MeteoSource(BaseSource):
+    NAME = SourceName.METEO
     URL = "https://api.open-meteo.com/v1/forecast"
     PAYLOAD_MODEL: ClassVar[Type[BasePayload]] = MeteoPayload
     REQUEST_PARAM_MODEL: ClassVar[Type[BaseParamModel]] = MeteoParams
