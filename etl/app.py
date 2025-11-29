@@ -41,7 +41,7 @@ def et(long: float, lat: float, source: SourceName, **extra_params) -> Sequence[
 
 def etl(long: float, lat: float, source: SourceName, **extra_params) -> uuid.UUID:
     logger.info("Starting persisted fetch")
-    # insert pending fetch row
+
     current_source = create_source(source, dict(longitude=long, latitude=lat))
 
     logger.info("Logging fetch for params %s, %s %s using %s", long, lat, extra_params, current_source.URL)

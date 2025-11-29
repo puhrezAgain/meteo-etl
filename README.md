@@ -8,6 +8,6 @@ Mostly just a space for me to try out contemporary data tooling and refresh my p
 # installation via poetry
 poetry install
 
-# run fectch to pretty print JSON data from Meteo for coorindates 5, 3
-poetry run python -m etl fetch  --long 5 --lat 3
+# run cli with help to see available commands
+poetry run python -m etl --help
 ```
