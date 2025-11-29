@@ -41,16 +41,16 @@ class BaseSource(ABC):
             **self._params.model_dump()
         }
 
-    def run_extractor(self) -> dict:
-        self.raw_data = run_extractor(self.URL, self.params, user_agent=f"{APP_NAME}_{self.NAME}") 
+    def run_extractor(self, **extra_params) -> dict:
+        self.raw_data = run_extractor(self.URL, {**self.params, **extra_params}, user_agent=f"{APP_NAME}_{self.NAME}") 
         return self.raw_data
     
     def run_transform(self) -> Sequence[WeatherRecord]:
         self.data = self.PAYLOAD_MODEL.model_validate(self.raw_data)
         return self.data.to_records()
     
-    def extract_and_transform(self) -> Sequence[WeatherRecord]:
-        self.run_extractor()
+    def extract_and_transform(self, **extra_params) -> Sequence[WeatherRecord]:
+        self.run_extractor(**extra_params)
         return self.run_transform()
 
 

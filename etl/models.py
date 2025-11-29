@@ -3,10 +3,9 @@
 etl.models centralizes the pydantic models to be used throughout the application
 
 """
-import uuid
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Sequence, List
+from typing import Sequence, List, Optional
 
 class BaseParamModel(BaseModel):
     pass
@@ -28,25 +27,25 @@ class WeatherRecord(BaseModel):
     latitude: float
     longitude: float
     timestamp: datetime
-    temperature: float
-    precipitation: float
-    soil_temperature:  float
-    soil_moisture:  float
-    wind_speed:  float
-    wind_direction:  float
-    cloud_cover: float
+    temperature: Optional[float]
+    precipitation: Optional[float]
+    soil_temperature:  Optional[float]
+    soil_moisture:  Optional[float]
+    wind_speed:  Optional[float]
+    wind_direction:  Optional[float]
+    cloud_cover: Optional[float]
  
 
     
 class RawMeteo(BaseModel):
     time: List[datetime]
-    temperature_2m: List[float]
-    precipitation: List[float]
-    soil_temperature_18cm: List[float]
-    soil_moisture_9_to_27cm: List[float]
-    wind_speed_10m: List[float]
-    wind_direction_10m: List[float]
-    cloud_cover: List[float]
+    temperature_2m: List[Optional[float]]
+    precipitation: List[Optional[float]]
+    soil_temperature_18cm: List[Optional[float]]
+    soil_moisture_9_to_27cm: List[Optional[float]]
+    wind_speed_10m: List[Optional[float]]
+    wind_direction_10m: List[Optional[float]]
+    cloud_cover: List[Optional[float]]
 
 
 class BasePayload(BaseModel):
