@@ -58,12 +58,12 @@ def insert_fetch_metadata(url: str, params: dict, session: Session) -> uuid.UUID
 
    
 
-def update_fetch_finished(
-        fetch_id: uuid.UUID, status_code: int, data: dict, session: Session) -> uuid.UUID:
+def update_fetch_metadata(
+        fetch_id: uuid.UUID, status_code: int, data: dict, status: str, session: Session) -> uuid.UUID:
     stmt = (
         update(FetchMetadata)
         .where(FetchMetadata.id == fetch_id)
-        .values(status="finished", response_status=status_code, response_data=data)
+        .values(status=status, response_status=status_code, response_data=data)
         .returning(FetchMetadata.id)
     )
   

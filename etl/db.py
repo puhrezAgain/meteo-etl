@@ -3,12 +3,12 @@ etl.db contains our database table definitions and sqlachemy engine/session
 """
 import os
 import uuid
-from . import config
 from datetime import datetime
 from sqlalchemy import ForeignKey, Index, Integer, Float, Text, func, UniqueConstraint, create_engine
 from sqlalchemy.orm import declarative_base, relationship, mapped_column, Mapped, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID
+from . import config # necessary for loading os.environ well
 
 Base = declarative_base()
 
