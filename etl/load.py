@@ -16,7 +16,13 @@ logger = get_logger(__name__)
 class LoadError(Exception):
     pass
 
-def load_observation_rows(data: Sequence[WeatherRecord], fetch_id: uuid.UUID, session: Session):
+def load_observation_rows(weather_records: Sequence[WeatherRecord], fetch_id: uuid.UUID, session: Session):
+    """
+    load_observation_rows associated each weather record with an id from FetchMetadata
+    then upserts them using the sqlalchemy session execution.
+
+    Raises LoadError if there occurs an error executing the upsert
+    """
     exclude_columns = set(
         WeatherRecord.model_fields.keys()
         ) - set(Observation.__table__.columns.keys())
@@ -24,7 +30,7 @@ def load_observation_rows(data: Sequence[WeatherRecord], fetch_id: uuid.UUID, se
     stmt = insert(Observation).values([
         dict(fetch_id=fetch_id,
              **model.model_dump(exclude=exclude_columns, exclude_unset=True))
-        for model in data
+        for model in weather_records
     ])
     
     stmt = stmt.on_conflict_do_update(
@@ -41,10 +47,14 @@ def load_observation_rows(data: Sequence[WeatherRecord], fetch_id: uuid.UUID, se
     try: 
         session.execute(stmt)
     except SQLAlchemyError as exc:
-        logger.exception("Failed loading observations rows (fetch=%s, rows=%d)", fetch_id, len(data))
+        logger.exception("Failed loading observations rows (fetch=%s, rows=%d)", fetch_id, len(weather_records))
         raise LoadError(f"DB weather load failed for fetch_id={fetch_id}") from exc
 
 def insert_fetch_metadata(url: str, params: dict, session: Session) -> uuid.UUID:
+    """
+    insert_fetch_metadata creates a row in FetchMetadata associated with the url and params
+    using the session, returning the id of the new row
+    """
     stmt = (
         insert(FetchMetadata)
         .values(request_url=url, request_params=params, request_timestamp=datetime.utcnow())

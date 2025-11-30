@@ -13,6 +13,9 @@ from . import config # necessary for loading os.environ well
 Base = declarative_base()
 
 class FetchMetadata(Base):
+    """
+    FetchMetadata represents metadata about a fetch job, allowing introspection and observability 
+    """
     __tablename__ = "fetch_metadata"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
@@ -28,6 +31,9 @@ class FetchMetadata(Base):
 
     
 class Observation(Base):
+    """
+    Observation represents weather information about a particular location (longitude and latitude)
+    """
     __tablename__ = "weather_observations"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
@@ -49,6 +55,7 @@ class Observation(Base):
         Index("ix_obs:loc:ts", "latitude", "longitude", "timestamp"),
     )
 
+# STANDARD SQLALCHEMY 
 def get_db_url() -> str:
     return os.environ.get("DATABASE_URL") or URL.create(
         drivername="postgresql+psycopg2",
