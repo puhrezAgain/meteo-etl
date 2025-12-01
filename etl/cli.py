@@ -7,10 +7,10 @@ import json
 from rich import print as rich_print
 from rich.pretty import Pretty
 from .app import et, etl
-from .logger import get_logger
+from .db import SessionLocal
+from .logger import configure_logger
 from .sources import SourceName
 
-logger = get_logger()
 app = typer.Typer()
 
 class FetchError(Exception):
@@ -58,7 +58,8 @@ def fetch_and_store(
         lat (float, optional): _description_. Defaults to typer.Option(None, help="Latitude of location to fetch").
         source (SourceName, optional): _description_. Defaults to typer.Option(SourceName.METEO, help="Source to be used in fetching", case_sensitive=False).
     """
-    etl(long, lat, source, **parse_cli_params(params))
+    etl(long, lat, source, SessionLocal, **parse_cli_params(params))
     
 def main():
+    configure_logger()
     app()

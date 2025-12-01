@@ -1,15 +1,11 @@
 import logging
 import sys
 
-def get_logger(name: str = __name__) -> logging.Logger:
-    logger = logging.getLogger(name)
-    if logger.handlers:
-        return logger
-
+def configure_logger() -> logging.Logger:
+    logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     
     handler = logging.StreamHandler(sys.stderr)
-    handler.setLevel(logging.INFO)
 
     formatter = logging.Formatter(
         fmt="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -18,9 +14,6 @@ def get_logger(name: str = __name__) -> logging.Logger:
 
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    logger.propagate = False
 
     return logger
-
-logger = get_logger("etl")
 

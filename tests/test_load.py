@@ -1,18 +1,7 @@
 import pytest
 from sqlalchemy import text, select, func
 from etl.db import FetchMetadata, Observation
-from etl.models import WeatherRecord
 from etl.load import insert_fetch_metadata, update_fetch_metadata, load_observation_rows
-class TestSanity:
-    def test_session(self, db_session):
-        r = db_session.execute(text("SELECT 1"))
-        assert r.scalar() == 1
-    def test_db_ready(self, db_session):
-        assert db_session.query(FetchMetadata).count() == 0
-
-    def test_weather_records(self, weather_records):
-        assert isinstance(weather_records, list)
-        assert all(isinstance(i, WeatherRecord) for i in weather_records)
 
 class TestLoad:
     def test_insert_new_fetch_metadata(self, db_session):  

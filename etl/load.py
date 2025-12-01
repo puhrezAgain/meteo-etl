@@ -1,25 +1,24 @@
 """
 etl.load contains logic related to database interations
 """
-import uuid
+import uuid, logging
 from datetime import datetime
 from typing import Sequence
 from sqlalchemy import func, update
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
-from .logger import get_logger
 from .models import WeatherRecord
 from .db import FetchMetadata, Observation
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 class LoadError(Exception):
     pass
 
 def load_observation_rows(weather_records: Sequence[WeatherRecord], fetch_id: uuid.UUID, session: Session):
     """
     load_observation_rows associated each weather record with an id from FetchMetadata
-    then upserts them using the sqlalchemy session execution.
+    then upserts them using the SQLAlchemy session execution.
 
     Raises LoadError if there occurs an error executing the upsert
     """
@@ -53,7 +52,9 @@ def load_observation_rows(weather_records: Sequence[WeatherRecord], fetch_id: uu
 def insert_fetch_metadata(url: str, params: dict, session: Session) -> uuid.UUID:
     """
     insert_fetch_metadata creates a row in FetchMetadata associated with the url and params
-    using the session, returning the id of the new row
+    using the SQLAlchemy session, returning the id of the new row
+
+    Raises LoadError if execute errors out
     """
     stmt = (
         insert(FetchMetadata)
@@ -68,8 +69,15 @@ def insert_fetch_metadata(url: str, params: dict, session: Session) -> uuid.UUID
 
    
 
-def update_fetch_metadata(
+def update_fetch_metadata(        
         fetch_id: uuid.UUID, status_code: int, data: dict, status: str, session: Session) -> uuid.UUID:
+    """
+    update_fetch_metadata updates the fetch identified with fetch_id 
+    with an status code, assoicated it with data, and assigns a new status 
+    using SQLAlchemy session, returns the id of the updated row
+
+    Raises LoadError if execution fails out
+    """
     stmt = (
         update(FetchMetadata)
         .where(FetchMetadata.id == fetch_id)

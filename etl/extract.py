@@ -2,14 +2,13 @@
 etl.extract encapuslates logic dealing with HTTP interactions
 """
 
-import requests, json
+import requests, json, logging
 from requests.adapters import HTTPAdapter
 from requests.models import Response
 from requests.exceptions import Timeout, HTTPError, RequestException, ConnectionError
 from urllib3.util.retry import Retry    
-from .logger import get_logger
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 def run_extractor(
         url: str, 
@@ -75,7 +74,7 @@ def _make_session(user_agent: str | None,
         raise_on_status=False,
         respect_retry_after_header=True
     )
-    adapter =HTTPAdapter(max_retries=retry)
+    adapter = HTTPAdapter(max_retries=retry)
     session = requests.Session()
     session.mount("https://", adapter)
     session.mount("http://", adapter)

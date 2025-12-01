@@ -39,33 +39,51 @@ def engine():
     drop_database(TEST_DATABASE_URL)
 
 @pytest.fixture()
-def db_session(engine):
+def db_session_maker(monkeypatch, engine):
     conn = engine.connect()
     trans = conn.begin()
     SessionLocal = sessionmaker(
         bind=conn, expire_on_commit=False,
         future=True
     )
-    session = SessionLocal()
+    from etl import db
+    monkeypatch.setattr(db, "engine", engine)
+    monkeypatch.setattr(db, "SessionLocal", SessionLocal)
+
+    try:
+        yield SessionLocal
+    finally:
+        trans.rollback()
+        conn.close()
+
+ 
+
+@pytest.fixture(autouse=True)
+def db_session(db_session_maker):
+    session = db_session_maker()
 
     try:
         yield session
     finally:
         session.close()
-        trans.rollback()
-        conn.close()
 
-@pytest.fixture(autouse=True)
-def override_engine(monkeypatch, engine, db_session):
-    from etl import db
-    monkeypatch.setattr(db, "engine", engine)
-    monkeypatch.setattr(db, "SessionLocal", lambda: db_session)
 
 @pytest.fixture()
-def weather_records():
+def weather_records(monkeypatch):
     with open("tests/fixtures/meteo-data.json") as f:
         records = json.load(f)
 
     return [
         models.WeatherRecord.model_validate_json(record) for record in records
     ]
+
+
+@pytest.fixture()
+def override_meteo_api(monkeypatch):
+    with open("tests/fixtures/meteo-payload.json") as f:
+        payload = json.load(f)
+
+    monkeypatch.setattr(
+        "etl.sources.run_extractor",
+        lambda *args, **kwargs: payload
+    )
