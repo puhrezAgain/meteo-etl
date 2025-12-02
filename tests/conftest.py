@@ -10,13 +10,14 @@ from sqlalchemy.orm import sessionmaker
 from etl import models, config
 
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL") or URL.create(
-        drivername="postgresql+psycopg2",
-        username=os.environ["DB_USER"],
-        password=os.environ["DB_PASSWORD"],
-        host=os.environ.get("DB_HOST", "localhost"),
-        port=int(os.environ.get("DB_PORT", "5432")),
-        database=f"{os.environ['DB_NAME']}_test" ,
-    ).render_as_string(hide_password=False)
+    drivername="postgresql+psycopg2",
+    username=os.environ["DB_USER"],
+    password=os.environ["DB_PASSWORD"],
+    host=os.environ.get("DB_HOST", "localhost"),
+    port=int(os.environ.get("DB_PORT", "5432")),
+    database=f"{os.environ['DB_NAME']}_test",
+).render_as_string(hide_password=False)
+
 
 @pytest.fixture(scope="session")
 def engine():
@@ -38,15 +39,14 @@ def engine():
     engine.dispose()
     drop_database(TEST_DATABASE_URL)
 
+
 @pytest.fixture()
 def db_session_maker(monkeypatch, engine):
     conn = engine.connect()
     trans = conn.begin()
-    SessionLocal = sessionmaker(
-        bind=conn, expire_on_commit=False,
-        future=True
-    )
+    SessionLocal = sessionmaker(bind=conn, expire_on_commit=False, future=True)
     from etl import db
+
     monkeypatch.setattr(db, "engine", engine)
     monkeypatch.setattr(db, "SessionLocal", SessionLocal)
 
@@ -56,7 +56,6 @@ def db_session_maker(monkeypatch, engine):
         trans.rollback()
         conn.close()
 
- 
 
 @pytest.fixture(autouse=True)
 def db_session(db_session_maker):
@@ -73,9 +72,7 @@ def weather_records(monkeypatch):
     with open("tests/fixtures/meteo-data.json") as f:
         records = json.load(f)
 
-    return [
-        models.WeatherRecord.model_validate_json(record) for record in records
-    ]
+    return [models.WeatherRecord.model_validate_json(record) for record in records]
 
 
 @pytest.fixture()
@@ -83,7 +80,4 @@ def override_meteo_api(monkeypatch):
     with open("tests/fixtures/meteo-payload.json") as f:
         payload = json.load(f)
 
-    monkeypatch.setattr(
-        "etl.sources.run_extractor",
-        lambda *args, **kwargs: payload
-    )
+    monkeypatch.setattr("etl.sources.run_extractor", lambda *args, **kwargs: payload)

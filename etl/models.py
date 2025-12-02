@@ -3,40 +3,46 @@
 etl.models centralizes the pydantic models to be used throughout the application
 
 """
+
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Sequence, List, Optional
 
+
 class BaseParamModel(BaseModel):
     pass
+
 
 class MeteoParams(BaseParamModel):
     longitude: float
     latitude: float
+
 
 class PartialFetchRecord(BaseModel):
     request_timestamp: datetime = Field(default_factory=datetime.utcnow)
     request_url: str
     request_params: dict
     status: str = "pending"
+
+
 class FetchRecord(PartialFetchRecord):
     response_data: dict
     response_status: int
-    
+
+
 class WeatherRecord(BaseModel):
     latitude: float
     longitude: float
     timestamp: datetime
     temperature: Optional[float]
     precipitation: Optional[float]
-    soil_temperature:  Optional[float]
-    soil_moisture:  Optional[float]
-    wind_speed:  Optional[float]
-    wind_direction:  Optional[float]
+    soil_temperature: Optional[float]
+    soil_moisture: Optional[float]
+    wind_speed: Optional[float]
+    wind_direction: Optional[float]
     cloud_cover: Optional[float]
- 
 
-    
+
 class RawMeteo(BaseModel):
     time: List[datetime]
     temperature_2m: List[Optional[float]]
@@ -59,10 +65,10 @@ class MeteoPayload(BasePayload):
     longitude: float
 
     def to_records(self) -> Sequence[WeatherRecord]:
-       payload = self.hourly
-       num_records = len(payload.time)
+        payload = self.hourly
+        num_records = len(payload.time)
 
-       return [
+        return [
             WeatherRecord(
                 latitude=round(self.latitude, 1),
                 longitude=round(self.longitude, 1),
@@ -77,5 +83,3 @@ class MeteoPayload(BasePayload):
             )
             for i in range(num_records)
         ]
-
-
