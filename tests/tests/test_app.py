@@ -1,7 +1,7 @@
 import pytest, requests, json
 from etl.sources import SourceName
 from etl.load import LoadError
-from etl.app import ETLError, _handle_etl_error, et, etl
+from etl.app import ETLError, _handle_etl_error, et, etl, ETError
 from etl.db import FetchMetadata, Observation
 
 
@@ -38,7 +38,7 @@ class TestETApp:
             "etl.sources.MeteoSource.run_transform", lambda *args: _raise(error)
         )
 
-        with pytest.raises(ETLError):
+        with pytest.raises(ETError):
             et(5.0, 3.0, SourceName.METEO)
 
     @pytest.mark.integration
