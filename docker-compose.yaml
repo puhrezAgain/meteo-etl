@@ -14,9 +14,7 @@ services:
       interval: 5s
       retries: 10
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     env_file: .env.example
     volumes:
       - .:/app:delegated
@@ -30,6 +28,16 @@ services:
       postgres:
         condition: service_healthy
     command: ["alembic", "upgrade", "head"]
+  streamlit:
+    build: .
+    env_file: .env.example
+    command: poetry run streamlit run dashboard/streamlit_app.py --server.port=8501 --server.address=0.0.0.0
+    volumes:
+      - .:/app
+    ports:
+      - 8501:8501
+    depends_on: 
+      - postgres
 
 volumes:
   db-data:

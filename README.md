@@ -13,8 +13,17 @@ docker compose build --pull
 # run our tests to ensure all is good
 docker compose run --rm app poetry run pytest -q 
 
-# optionalally run deamonized database service during development
+# run our migrations to get database to state
+docker compose run --rm migrations
+
+# (optional) run deamonized database service during development
 docker compose up -d postgres
+
+# run cli to see available commands
+docker compose run --rm app poetry run etl --help
+
+# run deamonized dashboard server
+docker compose up -d streamlit
 ```
 
 
@@ -28,6 +37,7 @@ poetry install
 
 # run tests to make sure everything is ok
 poetry run pytest
+
 # run cli with help to see available commands
 poetry run etl --help
 ```

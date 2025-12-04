@@ -85,6 +85,6 @@ class Observation(Base):
     )
 
 
-engine = create_engine(config.DB_URL, future=True, echo=config.DEBUG)
+engine = create_engine(config.DB_URL, echo=config.DEBUG)
 
-SessionLocal = sessionmaker(bind=engine, expire_on_commit=False, future=True)
+SessionLocal = sessionmaker(bind=engine)
