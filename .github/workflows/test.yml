@@ -1,0 +1,20 @@
+name: Run Tests
+
+on:
+  push:
+    branches: ["main"]
+    pull_requests:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    sets:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build containers
+        run: docker compose Build
+
+      - name: Run Tests
+        run: docker compose run --rm app pytest -q
