@@ -2,7 +2,7 @@ import streamlit as st
 import sqlalchemy as sql
 import pandas as pd
 from etl.config import DB_URL
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 from dashboard import queries
 
 
@@ -11,12 +11,6 @@ def get_engine() -> sql.Engine:
     return sql.create_engine(DB_URL, pool_pre_ping=True)
 
 
-@st.cache_resource(show_spinner=False)
-def get_session() -> sessionmaker:
-    return sessionmaker(bind=get_engine())
-
-
-@st.cache_data()
 def load_observations() -> pd.DataFrame:
     query = """
         SELECT * FROM weather_observations ORDER BY timestamp LIMIT 5000
@@ -24,7 +18,6 @@ def load_observations() -> pd.DataFrame:
     return pd.read_sql(query, get_engine())
 
 
-@st.cache_data()
 def load_metadata() -> pd.DataFrame:
     query = """
         SELECT * FROM fetch_metadata ORDER BY created_at LIMIT 5000
