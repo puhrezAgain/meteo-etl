@@ -17,7 +17,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file: .env
+    env_file: .env.example
     volumes:
       - .:/app:delegated
     depends_on:
@@ -25,7 +25,7 @@ services:
         condition: service_healthy
   migrations:
     build: .
-    env_file: .env
+    env_file: .env.example
     depends_on:
       postgres:
         condition: service_healthy
