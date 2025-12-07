@@ -16,6 +16,8 @@ services:
   app:
     build: .
     env_file: .env.example
+    environment:
+      - DB_HOST=postgres
     volumes:
       - .:/app:delegated
     depends_on:
@@ -24,6 +26,8 @@ services:
   migrations:
     build: .
     env_file: .env.example
+    environment:
+      - DB_HOST=postgres
     depends_on:
       postgres:
         condition: service_healthy

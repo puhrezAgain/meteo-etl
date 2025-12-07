@@ -6,8 +6,8 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy.engine.url import URL
 
-
-load_dotenv()
+load_dotenv(".env.example")
+load_dotenv(override=True)
 
 APP_NAME = os.environ.get("APP_NAME", "Weather API ETL dev")
 
