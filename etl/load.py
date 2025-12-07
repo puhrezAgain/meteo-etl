@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
 from .models import WeatherRecord
-from .db import FetchMetadata, Observation
+from .db import FetchMetadata, Observation, FetchStatus
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,11 @@ def insert_fetch_metadata(url: str, params: dict, session: Session) -> uuid.UUID
 
 
 def update_fetch_metadata(
-    fetch_id: uuid.UUID, status_code: int, data: dict, status: str, session: Session
+    fetch_id: uuid.UUID,
+    status_code: int,
+    data: dict,
+    status: FetchStatus,
+    session: Session,
 ) -> uuid.UUID:
     """
     update_fetch_metadata updates the fetch identified with fetch_id

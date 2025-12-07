@@ -13,6 +13,7 @@ from .load import (
 )
 from .models import WeatherRecord
 from .sources import create_source, SourceName
+from .db import FetchStatus
 
 logger = logging.getLogger(__name__)
 
@@ -113,11 +114,11 @@ def etl(
             logger.info("Ingest successful, updating metadata")
     except Exception as exc:
         error_occurred = exc
-        fetch_status = "error"
+        fetch_status = FetchStatus.ERROR
         status_code, error_msg, raw_data = _handle_etl_error(exc)
     else:
         status_code = 200
-        fetch_status = "finished"
+        fetch_status = FetchStatus.SUCCESS
         error_occurred = None
         error_msg = None
 

@@ -4,6 +4,7 @@ etl.db contains our database table definitions and sqlachemy engine/session
 
 import uuid
 from datetime import datetime
+from enum import Enum
 from sqlalchemy import (
     ForeignKey,
     Index,
@@ -21,10 +22,16 @@ from sqlalchemy.orm import (
     Mapped,
     sessionmaker,
 )
-from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID
+from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID, ENUM as SQLENUM
 from . import config
 
 Base = declarative_base()
+
+
+class FetchStatus(str, Enum):
+    PENDING = "pending"
+    ERROR = "error"
+    SUCCESS = "success"
 
 
 class FetchMetadata(Base):
@@ -41,7 +48,11 @@ class FetchMetadata(Base):
     request_timestamp: Mapped[datetime] = mapped_column(TIMESTAMP, nullable=False)
     request_params: Mapped[dict] = mapped_column(JSONB, nullable=False)
     request_url: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[str] = mapped_column(Text, server_default="pending")
+    status: Mapped[FetchStatus] = mapped_column(
+        SQLENUM(FetchStatus, name="fetch_status"),
+        default=FetchStatus.PENDING,
+        server_default=FetchStatus.PENDING,
+    )
     response_status: Mapped[int | None] = mapped_column(Integer)
     response_data: Mapped[dict | None] = mapped_column(JSONB)
 

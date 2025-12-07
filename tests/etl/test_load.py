@@ -1,6 +1,6 @@
 import pytest
 from sqlalchemy import text, select, func
-from etl.db import FetchMetadata, Observation
+from etl.db import FetchMetadata, Observation, FetchStatus
 from etl.load import insert_fetch_metadata, update_fetch_metadata, load_observation_rows
 
 
@@ -18,15 +18,17 @@ class TestLoad:
         tested = db_session.get(FetchMetadata, fetch_id)
         assert not tested.response_data
         assert not tested.response_status
-        assert tested.status == "pending"
+        assert tested.status == FetchStatus.PENDING
 
-        update_fetch_metadata(fetch_id, 200, dict(test=True), "finished", db_session)
+        update_fetch_metadata(
+            fetch_id, 200, dict(test=True), FetchStatus.SUCCESS, db_session
+        )
         db_session.flush()
 
         tested = db_session.get(FetchMetadata, fetch_id)
         assert tested.response_data == dict(test=True)
         assert tested.response_status == 200
-        assert tested.status == "finished"
+        assert tested.status == FetchStatus.SUCCESS
 
     def test_load_observation_rows(self, db_session, weather_records):
         fetch_id = insert_fetch_metadata("test", dict(test=True), db_session)

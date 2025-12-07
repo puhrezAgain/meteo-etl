@@ -2,7 +2,7 @@ import pytest, requests, json
 from etl.sources import SourceName
 from etl.load import LoadError
 from etl.app import ETLError, _handle_etl_error, et, etl, ETError
-from etl.db import FetchMetadata, Observation
+from etl.db import FetchMetadata, Observation, FetchStatus
 
 
 def _http_error_maker(code: int, text: str) -> requests.exceptions.HTTPError:
@@ -53,7 +53,7 @@ class TestETApp:
         fetch_id = etl(5.0, 3.0, SourceName.METEO, db_session_maker)
         fetch = db_session.get(FetchMetadata, fetch_id)
         assert fetch
-        assert fetch.status == "finished"
+        assert fetch.status == FetchStatus.SUCCESS
         assert db_session.query(Observation).count() == len(weather_records)
 
     @pytest.mark.integration  # integration because etl does a little db interaction before error handling
@@ -77,7 +77,7 @@ class TestETApp:
 
         fetch = db_session.get(FetchMetadata, exc.value.fetch_id)
         assert fetch
-        assert fetch.status == "error"
+        assert fetch.status == FetchStatus.ERROR
 
 
 @pytest.mark.unit
