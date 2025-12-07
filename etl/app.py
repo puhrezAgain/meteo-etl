@@ -105,8 +105,7 @@ def etl(
         )
 
     try:
-        raw_data = current_source.run_extractor(**extra_params)
-        data = current_source.run_transform()
+        data = current_source.extract_and_transform()
 
         with session_factory.begin() as session:
             logger.info("Fetch successful, initiating ingest")
@@ -115,15 +114,16 @@ def etl(
     except Exception as exc:
         error_occurred = exc
         fetch_status = FetchStatus.ERROR
-        status_code, error_msg, raw_data = _handle_etl_error(exc)
+        status_code, error_msg, error_data = _handle_etl_error(exc)
     else:
         status_code = 200
         fetch_status = FetchStatus.SUCCESS
         error_occurred = None
         error_msg = None
+        error_data = None
 
     with session_factory.begin() as session:
-        update_fetch_metadata(fetch_id, status_code, raw_data, fetch_status, session)
+        update_fetch_metadata(fetch_id, status_code, error_data, fetch_status, session)
 
     if error_occurred:
         logger.exception(

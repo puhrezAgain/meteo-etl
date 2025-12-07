@@ -7,6 +7,7 @@ etl.models centralizes the pydantic models to be used throughout the application
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Sequence, List, Optional
+from .db import FetchStatus
 
 
 class BaseParamModel(BaseModel):
@@ -22,11 +23,11 @@ class PartialFetchRecord(BaseModel):
     request_timestamp: datetime = Field(default_factory=datetime.utcnow)
     request_url: str
     request_params: dict
-    status: str = "pending"
+    status: FetchStatus = FetchStatus.PENDING
 
 
 class FetchRecord(PartialFetchRecord):
-    response_data: dict
+    error_data: dict
     response_status: int
 
 

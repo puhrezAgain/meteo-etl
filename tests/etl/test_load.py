@@ -16,7 +16,8 @@ class TestLoad:
         db_session.flush()
 
         tested = db_session.get(FetchMetadata, fetch_id)
-        assert not tested.response_data
+        assert not tested.error_data
+        assert not tested.finished_at
         assert not tested.response_status
         assert tested.status == FetchStatus.PENDING
 
@@ -26,7 +27,8 @@ class TestLoad:
         db_session.flush()
 
         tested = db_session.get(FetchMetadata, fetch_id)
-        assert tested.response_data == dict(test=True)
+        assert tested.error_data == dict(test=True)
+        assert tested.finished_at
         assert tested.response_status == 200
         assert tested.status == FetchStatus.SUCCESS
 

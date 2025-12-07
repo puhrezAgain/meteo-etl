@@ -4,7 +4,7 @@ etl.load contains logic related to database interations
 
 import uuid, logging
 from datetime import datetime
-from typing import Sequence
+from typing import Sequence, Optional
 from sqlalchemy import func, update
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
@@ -88,7 +88,7 @@ def insert_fetch_metadata(url: str, params: dict, session: Session) -> uuid.UUID
 def update_fetch_metadata(
     fetch_id: uuid.UUID,
     status_code: int,
-    data: dict,
+    error_data: Optional[dict],
     status: FetchStatus,
     session: Session,
 ) -> uuid.UUID:
@@ -99,10 +99,17 @@ def update_fetch_metadata(
 
     Raises LoadError if execution fails out
     """
+    update_vals = dict(
+        status=status,
+        response_status=status_code,
+        error_data=error_data,
+        finished_at=datetime.now() if status.is_finished else None,
+    )
+
     stmt = (
         update(FetchMetadata)
         .where(FetchMetadata.id == fetch_id)
-        .values(status=status, response_status=status_code, response_data=data)
+        .values(**update_vals)
         .returning(FetchMetadata.id)
     )
 
