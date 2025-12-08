@@ -76,8 +76,10 @@ def weather_records(monkeypatch):
 
 
 @pytest.fixture()
-def override_meteo_api(monkeypatch):
+def meteo_payload():
     with open("tests/fixtures/meteo-payload.json") as f:
-        payload = json.load(f)
+        return json.load(f)
 
-    monkeypatch.setattr("etl.sources.run_extractor", lambda *args, **kwargs: payload)
+@pytest.fixture()
+def override_meteo_api(monkeypatch, meteo_payload):
+    monkeypatch.setattr("etl.sources.run_extractor", lambda *args, **kwargs: meteo_payload)
