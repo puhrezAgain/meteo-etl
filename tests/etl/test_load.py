@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import text, select, func
 from etl.db import FetchMetadata, Observation, FetchStatus
 from etl.load import insert_fetch_metadata, update_fetch_metadata, load_observation_rows
+from etl.models import FetchUpdate
 
 
 class TestLoad:
@@ -22,7 +23,13 @@ class TestLoad:
         assert tested.status == FetchStatus.PENDING
 
         update_fetch_metadata(
-            fetch_id, 200, dict(test=True), FetchStatus.SUCCESS, db_session
+            fetch_id,
+            FetchUpdate(
+                response_status=200,
+                error_data=dict(test=True),
+                status=FetchStatus.SUCCESS,
+            ),
+            db_session,
         )
         db_session.flush()
 

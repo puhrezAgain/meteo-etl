@@ -4,8 +4,9 @@ etl.models centralizes the pydantic models to be used throughout the application
 
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, field_serializer
 from datetime import datetime
+from pathlib import Path
 from typing import Sequence, List, Optional
 from .db import FetchStatus
 
@@ -19,16 +20,17 @@ class MeteoParams(BaseParamModel):
     latitude: float
 
 
-class PartialFetchRecord(BaseModel):
-    request_timestamp: datetime = Field(default_factory=datetime.utcnow)
-    request_url: str
-    request_params: dict
-    status: FetchStatus = FetchStatus.PENDING
-
-
-class FetchRecord(PartialFetchRecord):
-    error_data: dict
+class FetchUpdate(BaseModel):
     response_status: int
+    error_data: Optional[dict] = None
+    status: FetchStatus = FetchStatus.PENDING
+    payload_path: Optional[Path] = None
+
+    @field_serializer("payload_path")
+    def serialize_payload_path(self, value: Path) -> str:
+        return str(value)
+
+    model_config = {"extra": "allow"}
 
 
 class WeatherRecord(BaseModel):

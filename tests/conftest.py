@@ -75,11 +75,22 @@ def weather_records(monkeypatch):
     return [models.WeatherRecord.model_validate_json(record) for record in records]
 
 
-@pytest.fixture()
+@pytest.fixture
 def meteo_payload():
     with open("tests/fixtures/meteo-payload.json") as f:
         return json.load(f)
 
-@pytest.fixture()
+
+@pytest.fixture
 def override_meteo_api(monkeypatch, meteo_payload):
-    monkeypatch.setattr("etl.sources.run_extractor", lambda *args, **kwargs: meteo_payload)
+    monkeypatch.setattr(
+        "etl.sources.run_extractor", lambda *args, **kwargs: meteo_payload
+    )
+
+
+@pytest.fixture
+def temp_lake_dir(monkeypatch, tmp_path):
+    from streaming.load import settings
+
+    monkeypatch.setattr(settings, "RAW_DATA_DIR", tmp_path)
+    return tmp_path

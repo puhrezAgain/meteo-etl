@@ -3,7 +3,7 @@ etl.app contains our top level service functions
 """
 
 import json, uuid, requests, logging
-from typing import Sequence, NamedTuple
+from typing import Sequence, NamedTuple, Callable, Any, Concatenate, Tuple
 from sqlalchemy.orm import sessionmaker
 from .load import (
     insert_fetch_metadata,
@@ -11,8 +11,8 @@ from .load import (
     update_fetch_metadata,
     LoadError,
 )
-from .models import WeatherRecord
-from .sources import create_source, SourceName
+from .models import WeatherRecord, FetchUpdate
+from .sources import create_source, SourceName, BaseSource
 from .db import FetchStatus
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,12 @@ class ErrorMetadata(NamedTuple):
     status_code: int
     error_message: str
     error_data: dict
+
+
+class ETLResult(NamedTuple):
+    fetch_id: uuid.UUID
+    fetch_status: FetchStatus
+    data_loader_result: Any
 
 
 def et(
@@ -74,18 +80,33 @@ def et(
     raise ETError(f"Error occurred fetching {source}") from error
 
 
+def _extract_and_load(
+    source: BaseSource, fetch_id: uuid.UUID, session_factory: sessionmaker
+):
+    """Helper function for etl to by default load data into a db"""
+    data = source.extract_and_transform()
+    with session_factory.begin() as session:
+        load_observation_rows(data, fetch_id, session)
+
+    return None, dict()
+
+
 def etl(
     long: float,
     lat: float,
     source: SourceName,
     session_factory: sessionmaker,
+    fetch_job: Callable[
+        Concatenate[BaseSource, uuid.UUID, ...], Tuple[Any, dict]
+    ] = _extract_and_load,
     **extra_params,
-) -> uuid.UUID:
+) -> ETLResult:
     """
     etl uses a source object to extract and transform data using a long(itude) and lat(itude) along with whatever extraparams
-    then loads the resulting records into a database
+    then passing the instatiated source with fetch_id and session into
+    a fetch_job function which returns any data to be returned along with job and metadata for fech
 
-    Returns the id of the row describing the job
+    Returns a tuple of the id of the row describing the job, and return from data loader
     Raises ETLError if any error occurs
     """
     logger.info("Starting persisted fetch")
@@ -105,16 +126,17 @@ def etl(
         )
 
     try:
-        data = current_source.extract_and_transform()
-
-        with session_factory.begin() as session:
-            logger.info("Fetch successful, initiating ingest")
-            load_observation_rows(data, fetch_id, session)
-            logger.info("Ingest successful, updating metadata")
+        logger.info("Fetch successful, initiating ingest")
+        data_return, fetch_update_dict = fetch_job(
+            current_source, fetch_id, session_factory
+        )
+        logger.info("Ingest successful, updating metadata")
     except Exception as exc:
         error_occurred = exc
         fetch_status = FetchStatus.ERROR
         status_code, error_msg, error_data = _handle_etl_error(exc)
+        data_return = None
+        fetch_update_dict = dict()
     else:
         status_code = 200
         fetch_status = FetchStatus.SUCCESS
@@ -122,8 +144,14 @@ def etl(
         error_msg = None
         error_data = None
 
+    fetch_update = FetchUpdate(
+        response_status=status_code,
+        status=fetch_status,
+        error_data=error_data,
+        **fetch_update_dict,
+    )
     with session_factory.begin() as session:
-        update_fetch_metadata(fetch_id, status_code, error_data, fetch_status, session)
+        update_fetch_metadata(fetch_id, fetch_update, session)
 
     if error_occurred:
         logger.exception(
@@ -134,7 +162,7 @@ def etl(
         ) from error_occurred
 
     logger.info("Fetch and store successful")
-    return fetch_id
+    return ETLResult(fetch_id, fetch_status, data_return)
 
 
 def _handle_etl_error(error: Exception) -> ErrorMetadata:

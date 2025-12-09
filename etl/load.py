@@ -4,13 +4,13 @@ etl.load contains logic related to database interations
 
 import uuid, logging
 from datetime import datetime
-from typing import Sequence, Optional
+from typing import Sequence
 from sqlalchemy import func, update
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
-from .models import WeatherRecord
-from .db import FetchMetadata, Observation, FetchStatus
+from .models import WeatherRecord, FetchUpdate
+from .db import FetchMetadata, Observation
 
 logger = logging.getLogger(__name__)
 
@@ -87,9 +87,7 @@ def insert_fetch_metadata(url: str, params: dict, session: Session) -> uuid.UUID
 
 def update_fetch_metadata(
     fetch_id: uuid.UUID,
-    status_code: int,
-    error_data: Optional[dict],
-    status: FetchStatus,
+    fetch_update: FetchUpdate,
     session: Session,
 ) -> uuid.UUID:
     """
@@ -99,17 +97,13 @@ def update_fetch_metadata(
 
     Raises LoadError if execution fails out
     """
-    update_vals = dict(
-        status=status,
-        response_status=status_code,
-        error_data=error_data,
-        finished_at=datetime.now() if status.is_finished else None,
-    )
-
     stmt = (
         update(FetchMetadata)
         .where(FetchMetadata.id == fetch_id)
-        .values(**update_vals)
+        .values(
+            **fetch_update.model_dump(),
+            finished_at=datetime.now() if fetch_update.status.is_finished else None,
+        )
         .returning(FetchMetadata.id)
     )
 
