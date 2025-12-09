@@ -7,12 +7,8 @@
         { "name": "fetch_id", "type": "string", "doc": "stable UUID to reference this job" },
         { 
             "name": "source",
-            "type": {
-                "type": "enum",
-                "name": "SourceName",
-                "symbols": ["etl_meteo"],
-                "doc": "API data sources"
-            }
+            "type": "string",
+            "doc": "URL from where the data came from"
         },
         { 
             "name": "status", 

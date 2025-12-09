@@ -1,10 +1,10 @@
 import uuid
+from typing import cast
 from datetime import datetime, timezone
 from pathlib import Path
-from pydantic import BaseModel, field_serializer, Field
+from pydantic import BaseModel, field_serializer, AnyUrl
 from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.avro import AvroSerializer
-from etl.sources import SourceName
 from etl.db import FetchStatus, FetchMetadata
 from .config import settings
 
@@ -13,7 +13,7 @@ SCHEMA_PATH = settings.SCHEMA_PATHS / "fetch_event.avsc"
 
 class FetchEvent(BaseModel):
     fetch_id: uuid.UUID
-    source: SourceName
+    source: AnyUrl
     params: dict
     status: FetchStatus
     path: Path
@@ -27,7 +27,7 @@ class FetchEvent(BaseModel):
         return dict(
             fetch_id=str(self.fetch_id),
             params=self.params,
-            source=self.source.value,
+            source=str(self.source),
             status=self.status.value,
             path=str(self.path),
             finished_at=int(
@@ -39,7 +39,7 @@ class FetchEvent(BaseModel):
     def from_db_model(cls, model: FetchMetadata):
         return cls(
             fetch_id=model.id,
-            source=model.source,
+            source=cast(AnyUrl, model.request_url),
             params=model.request_params,
             finished_at=model.finished_at,
             status=model.status,
