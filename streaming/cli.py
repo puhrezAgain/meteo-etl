@@ -1,3 +1,5 @@
+"""streaming.cli contains commands to be users"""
+
 import typer, logging
 from typing import Optional
 from etl.cli import parse_cli_params

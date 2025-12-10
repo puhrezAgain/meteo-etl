@@ -1,3 +1,5 @@
+"""streaming.events contains data models and functonality around events and their handling"""
+
 import uuid, json
 from typing import cast
 from datetime import datetime, timezone
@@ -9,10 +11,10 @@ from confluent_kafka.schema_registry.avro import AvroSerializer, AvroDeserialize
 from etl.db import FetchStatus, FetchMetadata
 from .config import settings
 
-SCHEMA_PATH = settings.SCHEMA_PATHS / "fetch_event.avsc"
-
 
 class FetchEvent(BaseModel):
+    """Pydantic model representing a fetch event used for interplay between kafka and database"""
+
     fetch_id: uuid.UUID
     source: AnyUrl
     params: dict
@@ -68,15 +70,17 @@ class FetchEvent(BaseModel):
         )
 
 
-def load_avro_schema():
-    with open(SCHEMA_PATH) as f:
+def load_fetch_schema() -> str:
+    """helper function for reading our fetch schema from file"""
+    with open(settings.SCHEMA_PATHS / "fetch_event.avsc") as f:
         return f.read()
 
 
 def get_fetch_event_serializer():
+    """helper function instatiating an AvroSerializer associated with our schema/schema registry"""
     client = SchemaRegistryClient(dict(url=str(settings.SCHEMA_REGISTRY_URL)))
 
-    schema_str = load_avro_schema()
+    schema_str = load_fetch_schema()
 
     return AvroSerializer(
         schema_registry_client=client,  # type: ignore

@@ -11,7 +11,7 @@ from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.avro import AvroDeserializer
 from etl import models, config
 from streaming.config import settings
-from streaming.events import load_avro_schema
+from streaming.events import load_fetch_schema
 
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL") or URL.create(
     drivername="postgresql+psycopg2",
@@ -149,7 +149,7 @@ def schema_registry_client():
 
 @pytest.fixture
 def avro_deserialize(schema_registry_client):
-    return AvroDeserializer(schema_registry_client, load_avro_schema())  # type: ignore
+    return AvroDeserializer(schema_registry_client, load_fetch_schema())  # type: ignore
 
 
 @pytest.fixture
