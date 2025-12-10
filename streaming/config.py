@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     )
     KAFKA_BOOTSTRAP_SERVERS: AnyUrl = cast(AnyUrl, "localhost:29092")
     SCHEMA_REGISTRY_URL: AnyUrl = cast(AnyUrl, "http://localhost:8081")
-    FETCH_TOPIC: str = "weather.fetch_raw.v1"
+    FETCH_TOPIC: str = "meteo.fetch.v1"
 
     RAW_DATA_DIR: Path = Path("/data/bronze")
 

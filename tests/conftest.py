@@ -1,5 +1,5 @@
 import pytest, os, json, time, uuid
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database, drop_database
 from alembic.config import Config
 from alembic import command
@@ -129,7 +129,7 @@ def kafka_admin():
 
 @pytest.fixture
 def meteo_topic(kafka_admin):
-    new_topic = f"meteo_test_{uuid.uuid4().hex[:8]}"
+    new_topic = f"meteo.test.{uuid.uuid4().hex[:8]}"
     create_topic(kafka_admin, new_topic)
 
     try:
@@ -143,7 +143,7 @@ def schema_registry_client():
 
 @pytest.fixture
 def avro_deserialize(schema_registry_client):
-    return AvroDeserializer(schema_registry_client, load_avro_schema()) # type: ignore
+    return AvroDeserializer(schema_registry_client, load_avro_schema())  # type: ignore
 
 @pytest.fixture
 def avro_consumer(meteo_topic):
