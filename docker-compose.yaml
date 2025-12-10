@@ -43,6 +43,8 @@ services:
   streamlit:
     build: .
     env_file: .env.example
+    environment:
+      - DB_HOST=postgres
     command: poetry run streamlit run dashboard/streamlit_app.py --server.port=8501 --server.address=0.0.0.0
     volumes:
       - .:/app
