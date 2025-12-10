@@ -1,11 +1,14 @@
 import typer, logging
+from typing import Optional
 from etl.cli import parse_cli_params
 from etl.logger import configure_logger
 from etl.sources import SourceName
 from etl.app import etl
 from etl.db import SessionLocal
+from .config import settings
 from .load import extract_and_save_to_disk
 from .producer import publish_finished_fetch
+from .consumer import poll_and_upsert_msg_to_db
 
 app = typer.Typer()
 logger = logging.getLogger(__name__)
@@ -51,6 +54,22 @@ def fetch_and_publish(
 
     logging.info(f"Publishing event for fetch {fetch_id}")
     publish_finished_fetch(fetch_id, SessionLocal())
+
+
+@app.command()
+def consume_fetch_events(
+    max_messages: Optional[int] = typer.Option(
+        None,
+        help="Optional limit of messages to process before exiting (useful for tests)",
+    )
+):
+    """
+    Run a consumer that:
+    - Listens for fetch metadata events
+    - Reads the raw file for each event
+    - Runs transform+upsert on that raw file into the database
+    """
+    poll_and_upsert_msg_to_db(max_messages, SessionLocal)
 
 
 def main():

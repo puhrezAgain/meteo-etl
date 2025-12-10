@@ -1,10 +1,11 @@
-import uuid
+import uuid, json
 from typing import cast
 from datetime import datetime, timezone
 from pathlib import Path
-from pydantic import BaseModel, field_serializer, AnyUrl
+from pydantic import BaseModel, field_serializer, AnyUrl, field_validator
+from confluent_kafka import Message
 from confluent_kafka.schema_registry import SchemaRegistryClient
-from confluent_kafka.schema_registry.avro import AvroSerializer
+from confluent_kafka.schema_registry.avro import AvroSerializer, AvroDeserializer
 from etl.db import FetchStatus, FetchMetadata
 from .config import settings
 
@@ -22,6 +23,12 @@ class FetchEvent(BaseModel):
     @field_serializer("path")
     def serialize_path(self, value: Path) -> str:
         return str(value)
+
+    @field_validator("finished_at", mode="before")
+    def normalize_finished_at(cls, v):
+        if isinstance(v, datetime):
+            return v
+        return datetime.fromtimestamp(v / 1000, tz=timezone.utc)
 
     def to_avro(self):
         return dict(
@@ -62,3 +69,15 @@ def get_fetch_event_serializer():
         schema_str=schema_str,  # type: ignore
         to_dict=lambda obj, _: obj.to_avro(),  # type: ignore
     )
+
+
+def avro_msg_to_event(msg: Message, deserializer: AvroDeserializer) -> FetchEvent:
+    return FetchEvent.model_validate(deserializer(msg.value()))
+
+
+def get_raw_data_from_fetch_event(event: FetchEvent):
+    if not event.path.exists():
+        raise FileNotFoundError(f"Raw file does not exist: {event.path}")
+
+    with open(event.path) as f:
+        return json.load(f)

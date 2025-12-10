@@ -12,8 +12,10 @@ class Settings(BaseSettings):
     )
 
     KAFKA_BOOTSTRAP_SERVERS: AnyUrl = AnyUrl("localhost:9092")
+    FETCH_GROUP_ID: str = "meteo.ingestor.fetch-consumer"
     SCHEMA_REGISTRY_URL: AnyUrl = AnyUrl("http://localhost:8081")
     FETCH_TOPIC: str = "meteo.fetch.v1"
+    FETCH_CONSUMER_TIMEOUT: float = 1
 
     DATA_DIR: Path = PROJECT_ROOT / "data"
     RAW_DATA_DIR: Path = DATA_DIR / "bronze"

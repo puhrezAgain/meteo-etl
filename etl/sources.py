@@ -8,7 +8,7 @@ in addition to standard url differences and payload differences
 """
 
 from abc import ABC, abstractmethod
-from typing import Type, ClassVar, Mapping, Sequence
+from typing import Type, ClassVar, Mapping, Sequence, Optional
 from enum import Enum
 from types import MappingProxyType
 from .config import APP_NAME
@@ -40,6 +40,10 @@ class BaseSource(ABC):
     def __init__(self, required_params: dict, **extra_params):
         self._params = self.REQUEST_PARAM_MODEL.model_validate(required_params)
         self._extra_params = extra_params
+
+    @classmethod
+    def transform_raw_to_records(cls, raw_data: dict) -> Sequence[WeatherRecord]:
+        return cls.PAYLOAD_MODEL.model_validate(raw_data).to_records()
 
     @property
     def params(self) -> dict:
@@ -88,3 +92,9 @@ class MeteoSource(BaseSource):
 
 def create_source(name: SourceName, params: dict) -> BaseSource:
     return SOURCE_REGISTRY[name](params)
+
+
+def get_source_by_url(url: str) -> Optional[Type[BaseSource]]:
+    for key, source_class in SOURCE_REGISTRY.items():
+        if source_class.URL == url:
+            return source_class

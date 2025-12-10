@@ -1,8 +1,15 @@
 import json, uuid
 from datetime import datetime
 from pathlib import Path
-from etl.sources import SourceName, BaseSource
+from sqlalchemy.orm import sessionmaker
+from etl.sources import SourceName, BaseSource, get_source_by_url
+from etl.load import load_observation_rows
 from .config import settings
+from .events import FetchEvent, get_raw_data_from_fetch_event
+
+
+class StreamLoadError(Exception):
+    pass
 
 
 def save_to_disk(data, fetch_id: uuid.UUID, source_name: SourceName) -> Path:
@@ -21,3 +28,17 @@ def extract_and_save_to_disk(source: BaseSource, fetch_id: uuid.UUID, *args):
     data = source.run_extractor()
     path = save_to_disk(data, fetch_id, source.NAME)
     return data, dict(payload_path=path)
+
+
+def transform_event_and_persist_to_db(event: FetchEvent, session_factory: sessionmaker):
+    source_class = get_source_by_url(str(event.source))
+
+    if not source_class:
+        raise StreamLoadError(f"Source Class not found for {event.source}")
+
+    raw_data = get_raw_data_from_fetch_event(event)
+    data = source_class.transform_raw_to_records(raw_data)
+
+    with session_factory.begin() as session:
+        load_observation_rows(data, event.fetch_id, session)
+        session.commit()
