@@ -1,0 +1,26 @@
+{
+    "type": "record",
+    "name": "FetchEvent",
+    "namespace": "meteo.weather",
+    "doc": "Metadata for a weather data fetch job",
+    "fields": [
+        { "name": "fetch_id", "type": "string", "doc": "stable UUID to reference this job" },
+        { 
+            "name": "source",
+            "type": "string",
+            "doc": "URL from where the data came from"
+        },
+        { 
+            "name": "status", 
+            "type": {
+                "type": "enum",
+                "name": "FetchStatus",
+                "symbols": ["pending", "error", "success"],
+                "doc": "Potential states for a fetch job"
+            } 
+        },
+        { "name": "path", "type": ["null", "string"], "doc": "Path for data resulting from job, null if error occurred", "default": null },
+        { "name": "params", "type": {"type": "map", "values": ["string", "float"], "doc": "Parameters passed to the API"}},
+        { "name": "finished_at", "type": { "type": "long", "logicalType": "timestamp-millis"}, "doc": "Last time the job changed state"}
+    ]
+}

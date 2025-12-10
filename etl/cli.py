@@ -30,8 +30,8 @@ def parse_cli_params(params: list[str]) -> dict:
 
 @app.command()
 def fetch(
-    long: float = typer.Option(None, help="Longitude of location to fetch"),
-    lat: float = typer.Option(None, help="Latitude of location to fetch"),
+    long: float = typer.Option(..., help="Longitude of location to fetch"),
+    lat: float = typer.Option(..., help="Latitude of location to fetch"),
     pretty: bool = typer.Option(
         True, "--pretty/--no-pretty", help="Pretty-print output"
     ),
@@ -58,8 +58,8 @@ def fetch(
 
 @app.command()
 def fetch_and_store(
-    long: float = typer.Option(None, help="Longitude of location to fetch"),
-    lat: float = typer.Option(None, help="Latitude of location to fetch"),
+    long: float = typer.Option(..., help="Longitude of location to fetch"),
+    lat: float = typer.Option(..., help="Latitude of location to fetch"),
     source: SourceName = typer.Option(
         SourceName.METEO, help="Strategy to be used in fetching", case_sensitive=False
     ),

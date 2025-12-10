@@ -50,10 +50,10 @@ class TestETApp:
         db_session,
         weather_records,
     ):
-        fetch_id = etl(5.0, 3.0, SourceName.METEO, db_session_maker)
+        fetch_id, status, _ = etl(5.0, 3.0, SourceName.METEO, db_session_maker)
         fetch = db_session.get(FetchMetadata, fetch_id)
         assert fetch
-        assert fetch.status == FetchStatus.SUCCESS
+        assert fetch.status == FetchStatus.SUCCESS == status
         assert db_session.query(Observation).count() == len(weather_records)
 
     @pytest.mark.integration  # integration because etl does a little db interaction before error handling

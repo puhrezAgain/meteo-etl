@@ -9,8 +9,8 @@ from sqlalchemy import func, update
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
-from .models import WeatherRecord
-from .db import FetchMetadata, Observation, FetchStatus
+from .models import WeatherRecord, FetchUpdate
+from .db import FetchMetadata, Observation
 
 logger = logging.getLogger(__name__)
 
@@ -87,9 +87,7 @@ def insert_fetch_metadata(url: str, params: dict, session: Session) -> uuid.UUID
 
 def update_fetch_metadata(
     fetch_id: uuid.UUID,
-    status_code: int,
-    data: dict,
-    status: FetchStatus,
+    fetch_update: FetchUpdate,
     session: Session,
 ) -> uuid.UUID:
     """
@@ -102,7 +100,10 @@ def update_fetch_metadata(
     stmt = (
         update(FetchMetadata)
         .where(FetchMetadata.id == fetch_id)
-        .values(status=status, response_status=status_code, response_data=data)
+        .values(
+            **fetch_update.model_dump(),
+            finished_at=datetime.now() if fetch_update.status.is_finished else None,
+        )
         .returning(FetchMetadata.id)
     )
 

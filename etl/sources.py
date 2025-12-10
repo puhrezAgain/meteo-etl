@@ -8,7 +8,7 @@ in addition to standard url differences and payload differences
 """
 
 from abc import ABC, abstractmethod
-from typing import Type, ClassVar, Mapping, Sequence
+from typing import Type, ClassVar, Mapping, Sequence, Optional
 from enum import Enum
 from types import MappingProxyType
 from .config import APP_NAME
@@ -22,9 +22,8 @@ from .models import (
 from .extract import run_extractor
 
 
-# to have a source be available
 class SourceName(str, Enum):
-    METEO = "etl.meteo"
+    METEO = "etl_meteo"
 
 
 class BaseSource(ABC):
@@ -34,20 +33,26 @@ class BaseSource(ABC):
     REQUEST_PARAM_MODEL: ClassVar[Type[BaseParamModel]]
     STATIC_PARAMS: ClassVar[Mapping[str, str]]
     _params: BaseParamModel
+    _extra_params: dict
     data: BasePayload
     raw_data: dict
 
-    def __init__(self, params: dict):
-        self._params = self.REQUEST_PARAM_MODEL.model_validate(params)
+    def __init__(self, required_params: dict, **extra_params):
+        self._params = self.REQUEST_PARAM_MODEL.model_validate(required_params)
+        self._extra_params = extra_params
+
+    @classmethod
+    def transform_raw_to_records(cls, raw_data: dict) -> Sequence[WeatherRecord]:
+        return cls.PAYLOAD_MODEL.model_validate(raw_data).to_records()
 
     @property
     def params(self) -> dict:
-        return {**self.STATIC_PARAMS, **self._params.model_dump()}
+        return {**self.STATIC_PARAMS, **self._params.model_dump(), **self._extra_params}
 
-    def run_extractor(self, **extra_params) -> dict:
+    def run_extractor(self, **runtime_params) -> dict:
         self.raw_data = run_extractor(
             self.URL,
-            {**self.params, **extra_params},
+            {**self.params, **runtime_params},
             user_agent=f"{APP_NAME}_{self.NAME}",
         )
         return self.raw_data
@@ -64,7 +69,7 @@ class BaseSource(ABC):
 SOURCE_REGISTRY: dict[SourceName, Type[BaseSource]] = {}
 
 
-def registre_source(name: SourceName):
+def register_source(name: SourceName):
     def _decorator(cls: Type[BaseSource]):
         SOURCE_REGISTRY[name] = cls
         return cls
@@ -72,7 +77,7 @@ def registre_source(name: SourceName):
     return _decorator
 
 
-@registre_source(SourceName.METEO)
+@register_source(SourceName.METEO)
 class MeteoSource(BaseSource):
     NAME = SourceName.METEO
     URL = "https://api.open-meteo.com/v1/forecast"
@@ -87,3 +92,9 @@ class MeteoSource(BaseSource):
 
 def create_source(name: SourceName, params: dict) -> BaseSource:
     return SOURCE_REGISTRY[name](params)
+
+
+def get_source_by_url(url: str) -> Optional[Type[BaseSource]]:
+    for key, source_class in SOURCE_REGISTRY.items():
+        if source_class.URL == url:
+            return source_class

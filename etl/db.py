@@ -4,6 +4,7 @@ etl.db contains our database table definitions and sqlachemy engine/session
 
 import uuid
 from datetime import datetime
+from functools import lru_cache
 from enum import Enum
 from sqlalchemy import (
     ForeignKey,
@@ -14,6 +15,8 @@ from sqlalchemy import (
     func,
     UniqueConstraint,
     create_engine,
+    CheckConstraint,
+    String,
 )
 from sqlalchemy.orm import (
     declarative_base,
@@ -33,6 +36,15 @@ class FetchStatus(str, Enum):
     ERROR = "error"
     SUCCESS = "success"
 
+    @classmethod
+    @lru_cache(maxsize=None)
+    def get_finished_statuses(cls):
+        return frozenset({cls.ERROR, cls.SUCCESS})
+
+    @property
+    def is_finished(self):
+        return self in self.get_finished_statuses()
+
 
 class FetchMetadata(Base):
     """
@@ -47,17 +59,29 @@ class FetchMetadata(Base):
     )
     request_timestamp: Mapped[datetime] = mapped_column(TIMESTAMP, nullable=False)
     request_params: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    request_url: Mapped[str] = mapped_column(Text, nullable=False)
+    request_url: Mapped[str] = mapped_column(String, nullable=False)
     status: Mapped[FetchStatus] = mapped_column(
         SQLENUM(FetchStatus, name="fetch_status"),
         default=FetchStatus.PENDING,
         server_default=FetchStatus.PENDING,
     )
     response_status: Mapped[int | None] = mapped_column(Integer)
-    response_data: Mapped[dict | None] = mapped_column(JSONB)
-
+    error_data: Mapped[dict | None] = mapped_column(JSONB)
+    payload_path: Mapped[str] = mapped_column(String)
+    finished_at: Mapped[datetime] = mapped_column(TIMESTAMP)
     observations = relationship(
         "Observation", back_populates="fetch", passive_deletes=True
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "payload_path ~ '^(https?|ftp|s3)://' OR payload_path ~ '^/[^ ]+'",
+            name="valid_payload_path_format",
+        ),
+        CheckConstraint(
+            "request_url ~ '^https?://'",
+            name="valid_request_url_format",
+        ),
     )
 
 

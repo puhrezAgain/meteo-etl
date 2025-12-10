@@ -25,7 +25,6 @@ def load_metadata() -> pd.DataFrame:
     return pd.read_sql(query, get_engine())
 
 
-@st.cache_data()
 def get_counts():
     e = get_engine()
     observation_count = pd.read_sql(
@@ -39,7 +38,6 @@ def get_counts():
     return observation_count, metadata_count, locations_count
 
 
-@st.cache_data()
 def get_last_job_status():
     e = get_engine()
     status = pd.read_sql(queries.LAST_JOB_STATUS, e).iloc[0][0].capitalize()
@@ -68,13 +66,17 @@ def main():
 
     summaries = observation_df.describe()
     col1, col2, col3 = st.columns(3)
-    col1.metric("Global mean temp.", f"{round(summaries['temperature']['mean'], 2)} °C")
-    col2.metric(
-        "Global mean wind speed", f"{round(summaries['wind_speed']['mean'], 2)} kmh"
-    )
-    col3.metric(
-        "Global mean wind precip.", f"{round(summaries['precipitation']['mean'], 2)} mm"
-    )
+    if len(observation_df):
+        col1.metric(
+            "Global mean temp.", f"{round(summaries['temperature']['mean'], 2)} °C"
+        )
+        col2.metric(
+            "Global mean wind speed", f"{round(summaries['wind_speed']['mean'], 2)} kmh"
+        )
+        col3.metric(
+            "Global mean wind precip.",
+            f"{round(summaries['precipitation']['mean'], 2)} mm",
+        )
 
     st.dataframe(observation_df)
 
