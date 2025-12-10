@@ -44,3 +44,4 @@ packages = [
 ]
 [tool.poetry.scripts]
 etl = "etl.cli:main()"
+streaming = "streaming.cli:main()"

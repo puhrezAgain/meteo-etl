@@ -2,3 +2,4 @@
 *.lock
 .env
 *.pyc
+data

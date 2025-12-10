@@ -4,10 +4,13 @@ from etl.db import FetchStatus
 from etl.models import FetchUpdate
 from streaming.producer import publish_finished_fetch
 
+
 @pytest.mark.integration
 def test_publish_finished_fetch(
-    meteo_topic, avro_consumer, monkeypatch, db_session, avro_deserialize):
+    meteo_topic, avro_consumer, monkeypatch, db_session, avro_deserialize
+):
     from streaming.producer import settings
+
     monkeypatch.setattr(settings, "FETCH_TOPIC", meteo_topic)
     fetch_id = insert_fetch_metadata("http://test", dict(test="True"), db_session)
     db_session.flush()
@@ -31,4 +34,3 @@ def test_publish_finished_fetch(
     decoded = avro_deserialize(msg.value())
 
     assert decoded["fetch_id"] == str(fetch_id)
-

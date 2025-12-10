@@ -12,9 +12,7 @@ logger = logging.getLogger(__name__)
 class FetchEventProducer:
     def __init__(self):
         self._producer = Producer(
-            {
-                "bootstrap.servers": settings.KAFKA_BOOTSTRAP_SERVERS
-            }
+            {"bootstrap.servers": settings.KAFKA_BOOTSTRAP_SERVERS}
         )
         self._serializer = get_fetch_event_serializer()
 

@@ -20,8 +20,10 @@ services:
       - DB_HOST=postgres
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SCHEMA_REGISTRY_URL=http://schema-registry:8081
+      - DATA_DIR=/app/data
     volumes:
       - .:/app:delegated
+      - ./data:/app/data
     depends_on:
       migrations:
         condition: service_completed_successfully

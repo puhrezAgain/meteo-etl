@@ -105,7 +105,7 @@ def wait_for_kafka():
     start = time.time()
 
     while True:
-        try:  
+        try:
             admin.list_topics(timeout=5)
             return admin
         except Exception:
@@ -113,19 +113,23 @@ def wait_for_kafka():
                 raise RuntimeError("Kafka did not become ready in time")
             time.sleep(1)
 
+
 def create_topic(admin: AdminClient, name: str):
     new_topic = NewTopic(topic=name, num_partitions=1, replication_factor=1)
     fs = admin.create_topics([new_topic])
     try:
         fs[name].result()
     except Exception as e:
-        if "TopicExistsException" not in repr(e) and "TopicAlreadyExists" not in repr(e):
+        if "TopicExistsException" not in repr(e) and "TopicAlreadyExists" not in repr(
+            e
+        ):
             raise
 
 
 @pytest.fixture(scope="session")
 def kafka_admin():
     return wait_for_kafka()
+
 
 @pytest.fixture
 def meteo_topic(kafka_admin):
@@ -137,21 +141,26 @@ def meteo_topic(kafka_admin):
     finally:
         kafka_admin.delete_topics([new_topic])
 
+
 @pytest.fixture(scope="session")
 def schema_registry_client():
     return SchemaRegistryClient(dict(url=str(settings.SCHEMA_REGISTRY_URL)))
+
 
 @pytest.fixture
 def avro_deserialize(schema_registry_client):
     return AvroDeserializer(schema_registry_client, load_avro_schema())  # type: ignore
 
+
 @pytest.fixture
 def avro_consumer(meteo_topic):
-    consumer = Consumer({
-        "bootstrap.servers": str(settings.KAFKA_BOOTSTRAP_SERVERS),
-        "group.id": f"pytest-meteo-{uuid.uuid4()}",
-        "auto.offset.reset": "earliest"
-    })
+    consumer = Consumer(
+        {
+            "bootstrap.servers": str(settings.KAFKA_BOOTSTRAP_SERVERS),
+            "group.id": f"pytest-meteo-{uuid.uuid4()}",
+            "auto.offset.reset": "earliest",
+        }
+    )
     consumer.subscribe([meteo_topic])
     try:
         yield consumer
