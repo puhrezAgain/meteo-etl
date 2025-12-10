@@ -58,7 +58,7 @@ def poll_and_upsert_msg_to_db(
 
             try:
                 logger.info("Received message")
-                event = avro_msg_to_event(msg, deserializer)
+                event = avro_msg_to_event(msg.value(), deserializer)
                 transform_event_and_persist_to_db(event, session_factory)
                 consumer.commit(msg)
                 processed += 1

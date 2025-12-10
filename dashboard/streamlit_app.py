@@ -67,12 +67,15 @@ def main():
     summaries = observation_df.describe()
     col1, col2, col3 = st.columns(3)
     if len(observation_df):
-        col1.metric("Global mean temp.", f"{round(summaries['temperature']['mean'], 2)} °C")
+        col1.metric(
+            "Global mean temp.", f"{round(summaries['temperature']['mean'], 2)} °C"
+        )
         col2.metric(
             "Global mean wind speed", f"{round(summaries['wind_speed']['mean'], 2)} kmh"
         )
         col3.metric(
-            "Global mean wind precip.", f"{round(summaries['precipitation']['mean'], 2)} mm"
+            "Global mean wind precip.",
+            f"{round(summaries['precipitation']['mean'], 2)} mm",
         )
 
     st.dataframe(observation_df)

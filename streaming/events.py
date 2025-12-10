@@ -26,9 +26,23 @@ class FetchEvent(BaseModel):
 
     @field_validator("finished_at", mode="before")
     def normalize_finished_at(cls, v):
-        if isinstance(v, datetime):
-            return v
-        return datetime.fromtimestamp(v / 1000, tz=timezone.utc)
+        if isinstance(v, (int, float)):
+            dt = datetime.fromtimestamp(v / 1000, tz=timezone.utc)
+        elif isinstance(v, datetime):
+            dt = v
+        else:
+            raise TypeError(f"Unsupported finished_at type: {type(v)}")
+
+        # assume naive = UTC
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        else:
+            dt = dt.astimezone(timezone.utc)
+
+        # truncate to milliseconds (Avro timestamp-millis precision)
+        us = dt.microsecond
+        ms_truncated = (us // 1000) * 1000
+        return dt.replace(microsecond=ms_truncated)
 
     def to_avro(self):
         return dict(
@@ -71,8 +85,8 @@ def get_fetch_event_serializer():
     )
 
 
-def avro_msg_to_event(msg: Message, deserializer: AvroDeserializer) -> FetchEvent:
-    return FetchEvent.model_validate(deserializer(msg.value()))
+def avro_msg_to_event(msg: bytes, deserializer: AvroDeserializer) -> FetchEvent:
+    return FetchEvent.model_validate(deserializer(msg))
 
 
 def get_raw_data_from_fetch_event(event: FetchEvent):

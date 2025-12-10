@@ -26,7 +26,7 @@ def test_fetch_event_matches_schema():
 
 
 @pytest.mark.integration
-def test_get_fetch_event_serializer_serializes(meteo_topic):
+def test_get_fetch_event_serializer_serializes():
     serializer = get_fetch_event_serializer()
 
     event = FetchEvent(

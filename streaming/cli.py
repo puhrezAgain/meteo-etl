@@ -53,7 +53,8 @@ def fetch_and_publish(
     )
 
     logging.info(f"Publishing event for fetch {fetch_id}")
-    publish_finished_fetch(fetch_id, SessionLocal())
+    with SessionLocal() as session:
+        publish_finished_fetch(fetch_id, session)
 
 
 @app.command()
