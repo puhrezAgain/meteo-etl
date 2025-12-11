@@ -10,6 +10,10 @@ from urllib3.util.retry import Retry
 logger = logging.getLogger(__name__)
 
 
+class ExtractError(HTTPError):
+    pass
+
+
 def run_extractor(url: str, params: dict, user_agent: str | None = None) -> dict:
     http_session = _make_session(user_agent)
     return _fetch_data(http_session, url, params)
@@ -24,18 +28,18 @@ def _fetch_data(session: requests.Session, url: str, params: dict):
 
         if status == 429:
             logger.error("Rate limited (429) fetching %s", url)
-            raise
 
         if status is not None and 400 <= status < 500:
             logger.error("Client error %s fetching %s", status, url)
-            raise
 
         if status is not None and 500 <= status < 600:
             logger.error("Server error %s from %s after retries", status, url)
-            raise
 
         logger.exception("HTTP error fetching %s (status=%s)", url, status)
-        raise
+        raise ExtractError(
+            request=httpError.request, response=httpError.response
+        ) from httpError
+
     except RequestException as requestException:
         # Network errors after retries
         logger.exception(

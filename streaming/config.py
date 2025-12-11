@@ -1,4 +1,6 @@
-"""streaming.config stores a pydantic settings object to concentrate and validate application configuration"""
+"""
+streaming.config stores a pydantic settings object to concentrate and validate application configuration
+"""
 
 from pathlib import Path
 from pydantic import PostgresDsn, AnyUrl

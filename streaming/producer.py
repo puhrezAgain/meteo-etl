@@ -1,4 +1,6 @@
-"""streaming.producer contains the logic around producing and publishing fetch events"""
+"""
+streaming.producer contains the logic around producing and publishing fetch events
+"""
 
 import logging, uuid
 from confluent_kafka import Producer
@@ -9,6 +11,18 @@ from .config import settings
 from .events import get_fetch_event_serializer, FetchEvent
 
 logger = logging.getLogger(__name__)
+
+
+def publish_finished_fetch(fetch_id: uuid.UUID, session: Session):
+    """
+    top level function for publishing a fetch event from a fetch_id
+    grabs the fetch model by id, tranforms it into a fetch event
+    and publishes it to the message broker via producer
+    """
+    producer = FetchEventProducer()
+    fetch = session.get(FetchMetadata, fetch_id)
+    fetch_event = FetchEvent.from_db_model(fetch)
+    producer.publish_fetch_event(fetch_event)
 
 
 class FetchEventProducer:
@@ -40,11 +54,3 @@ class FetchEventProducer:
         )
 
         self._producer.flush()
-
-
-def publish_finished_fetch(fetch_id: uuid.UUID, session: Session):
-    """top level function for publishing a fetch event from a fetch_id"""
-    producer = FetchEventProducer()
-    fetch = session.get(FetchMetadata, fetch_id)
-    fetch_event = FetchEvent.from_db_model(fetch)
-    producer.publish_fetch_event(fetch_event)

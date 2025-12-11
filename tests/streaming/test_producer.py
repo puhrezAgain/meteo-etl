@@ -16,8 +16,8 @@ def test_publish_finished_fetch(
     db_session.flush()
 
     update_fetch_metadata(
-        fetch_id,
         FetchUpdate(
+            fetch_id=fetch_id,
             response_status=200,
             error_data=dict(test=True),
             status=FetchStatus.SUCCESS,

@@ -1,4 +1,6 @@
-"""streaming.consumer groups logic around fetch event consumption"""
+"""
+streaming.consumer groups logic around fetch event consumption
+"""
 
 import logging
 from typing import Optional, Callable, Any

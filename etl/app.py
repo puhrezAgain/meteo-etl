@@ -11,6 +11,7 @@ from .load import (
     update_fetch_metadata,
     LoadError,
 )
+from .extract import ExtractError
 from .models import WeatherRecord, FetchUpdate
 from .sources import create_source, SourceName, BaseSource
 from .db import FetchStatus
@@ -145,13 +146,14 @@ def etl(
         error_data = None
 
     fetch_update = FetchUpdate(
+        fetch_id=fetch_id,
         response_status=status_code,
         status=fetch_status,
         error_data=error_data,
         **fetch_update_dict,
     )
     with session_factory.begin() as session:
-        update_fetch_metadata(fetch_id, fetch_update, session)
+        update_fetch_metadata(fetch_update, session)
 
     if error_occurred:
         logger.exception(
@@ -178,7 +180,7 @@ def _handle_etl_error(error: Exception) -> ErrorMetadata:
                 "Fetch faced load error, updating metadata and aborting",
                 dict(error="Load error"),
             )
-        case requests.exceptions.HTTPError():
+        case ExtractError():
             return ErrorMetadata(
                 error.response.status_code,
                 "Fetch faced http error, updating metadata and aborting",

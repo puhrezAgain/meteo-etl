@@ -4,6 +4,7 @@ etl.models centralizes the pydantic models to be used throughout the application
 
 """
 
+import uuid
 from pydantic import BaseModel, field_serializer
 from datetime import datetime
 from pathlib import Path
@@ -21,6 +22,7 @@ class MeteoParams(BaseParamModel):
 
 
 class FetchUpdate(BaseModel):
+    fetch_id: uuid.UUID
     response_status: int
     error_data: Optional[dict] = None
     status: FetchStatus = FetchStatus.PENDING

@@ -86,7 +86,6 @@ def insert_fetch_metadata(url: str, params: dict, session: Session) -> uuid.UUID
 
 
 def update_fetch_metadata(
-    fetch_id: uuid.UUID,
     fetch_update: FetchUpdate,
     session: Session,
 ) -> uuid.UUID:
@@ -99,9 +98,9 @@ def update_fetch_metadata(
     """
     stmt = (
         update(FetchMetadata)
-        .where(FetchMetadata.id == fetch_id)
+        .where(FetchMetadata.id == fetch_update.fetch_id)
         .values(
-            **fetch_update.model_dump(),
+            **fetch_update.model_dump(exclude={"fetch_id"}),
             finished_at=datetime.now() if fetch_update.status.is_finished else None,
         )
         .returning(FetchMetadata.id)
@@ -110,5 +109,9 @@ def update_fetch_metadata(
     try:
         return session.execute(stmt).scalar_one()
     except SQLAlchemyError as exc:
-        logger.exception("Failed updating fetch metadata (id=%s)", fetch_id)
-        raise LoadError(f"DB fetch update failed for fetch_id={fetch_id}") from exc
+        logger.exception(
+            "Failed updating fetch metadata (id=%s)", fetch_update.fetch_id
+        )
+        raise LoadError(
+            f"DB fetch update failed for fetch_id={fetch_update.fetch_id}"
+        ) from exc

@@ -1,4 +1,6 @@
-"""streaming.load contains functionality related to loading into a database or saving to disk"""
+"""
+streaming.load contains functionality related to loading into a database or saving to disk
+"""
 
 import json, uuid
 from datetime import datetime

@@ -1,4 +1,6 @@
-"""streaming.events contains data models and functonality around events and their handling"""
+"""
+streaming.events contains data models and functonality around events and their handling
+"""
 
 import uuid, json
 from typing import cast

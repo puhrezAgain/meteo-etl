@@ -1,4 +1,6 @@
-"""streaming.cli contains commands to be users"""
+"""
+streaming.cli contains commands to be users
+"""
 
 import typer, logging
 from typing import Optional
