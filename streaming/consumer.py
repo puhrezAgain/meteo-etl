@@ -28,6 +28,7 @@ def get_fetch_consumer():
             "bootstrap.servers": str(settings.KAFKA_BOOTSTRAP_SERVERS),
             "group.id": settings.FETCH_GROUP_ID,
             "auto.offset.reset": "earliest",
+            "enable.auto.commit": False
         }
     )
 
@@ -60,7 +61,7 @@ def poll_and_upsert_msg_to_db(
             lambda: consumer.poll(settings.FETCH_CONSUMER_TIMEOUT),
             lambda msg: avro_msg_to_event(msg.value(), deserializer),
             lambda event: transform_event_and_persist_to_db(event, session_factory),
-            lambda msg: consumer.commit(msg),
+            consumer.commit,
         )
     except KeyboardInterrupt:
         logger.info("Shutting down consumer (KeyboardInterrupt)")
@@ -74,7 +75,7 @@ def _loop_poll_messages(
     poll: Callable[[], Message],
     msg_to_event: Callable[[Message], Any],
     job: Callable[[Any], None],
-    post_job: Callable[[Message], None],
+    commit: Callable[[Message], None],
 ) -> int:
     """helper function to encapulate looping until limit"""
     processed = 0
@@ -97,7 +98,7 @@ def _loop_poll_messages(
             logger.info("Received message")
             event = msg_to_event(msg)
             job(event)
-            post_job(msg)
+            commit(msg)
             processed += 1
         except Exception:
             logger.exception(

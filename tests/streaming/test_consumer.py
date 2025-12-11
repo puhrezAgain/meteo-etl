@@ -16,7 +16,6 @@ from streaming.load import extract_and_save_to_disk
 @pytest.mark.integration
 def test_get_fetch_deserializer_deserializes():
     deserializer = get_fetch_deserializer()
-
     serializer = get_fetch_event_serializer()
 
     event = FetchEvent(
